@@ -1,2 +1,5 @@
 img_cache/
-
+__pycache__/
+.idea/
+*.env
+*.pkl
