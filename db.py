@@ -7,7 +7,7 @@ from emote_handler import Emote, InvalidEmote
 class DbHandler:
     def __init__(self):
         load_dotenv(strs.Handler.Internal.DOTENV_NAME)
-        database_path: str = os.getenv('EMOTE_DB')
+        database_path: str = os.getenv(strs.Handler.Internal.EMOTE_DB_NAME)
         self._emote_db: tdb.TinyDB = tdb.TinyDB(database_path)
         self._query_object: tdb.Query = tdb.Query()
 

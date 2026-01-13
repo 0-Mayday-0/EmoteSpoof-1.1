@@ -7,6 +7,7 @@ class Handler:
     class Internal:
         DOTENV_NAME: str = 'paths.env'
         IMG_CACHE_NAME: str = 'IMAGE_CACHE'
+        EMOTE_DB_NAME: str = 'EMOTE_DB'
         IMAGE_MODE: str = 'RGB'
 
     @dataclass(frozen=True)
