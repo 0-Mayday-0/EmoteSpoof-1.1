@@ -17,7 +17,7 @@ class Emote:
             self._root_domain: str = re.search(r'(discordapp\.)', url).group()
             self._top_level_domain: str = re.search(r'(com/)', url).group()
             self._slug: str = re.search(r'emojis/', url).group()
-            self._emote_ID: str = re.search(r'\d{19}\.', url).group()
+            self._emote_ID: str = re.search(r'\d{18,19}\.', url).group()
             self._extension: str = re.search(r'((gif)|(png)|(jpg)|(jpeg)|(jfif))\?', url).group()
             self._config: str = re.search(r'(v=\d&size=\d{2}&quality=lossless)', url).group()
 
@@ -38,6 +38,12 @@ class Emote:
     def _assemble_url(self) -> str:
         return (f'{self._protocol}{self._subdomain}{self._root_domain}{self._top_level_domain}{self._slug}'
                 f'{self._emote_ID}{self._extension}{self._config}')
+
+    def get_id(self) -> str:
+        return self._emote_ID
+
+    def get_url(self) -> str:
+        return self._assemble_url()
 
     async def fetch_emote_img(self) -> Image:
         img_data: Response = await to_thread(get, self._assemble_url())

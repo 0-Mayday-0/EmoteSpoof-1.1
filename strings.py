@@ -12,3 +12,5 @@ class Handler:
     @dataclass(frozen=True)
     class External:
         INVALID_URL: str = "The emote URL is invalid."
+        ADDED_SUCCESS: str = "The emote with id {id} was added successfully."
+        ALREADY_EXISTS: str = "The emote with id {id} already exists."
