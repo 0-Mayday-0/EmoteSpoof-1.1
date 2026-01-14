@@ -35,7 +35,7 @@ class DbHandler:
         return strs.Handler.External.REMOVED_SUCCESS.format(id=emote_id)
 
     def emotes_pages(self) -> list[Emote]:
-        return [Emote(emote[strs.Handler.Internal.EMOTE_URL]) for emote in self._emote_db.all()[:self.max_emotes_ppage*self.current_page]]
+        return [Emote(emote[strs.Handler.Internal.EMOTE_URL]) for emote in self._emote_db.all()[self.max_emotes_ppage-(self.max_emotes_ppage*self.current_page):self.max_emotes_ppage*self.current_page]]
 
     def next_page(self) -> None:
         self.current_page += 1
@@ -46,7 +46,7 @@ class DbHandler:
 def main() -> None:
     db: DbHandler = DbHandler(10)
 
-    print(db.add_emote("https://cdn.discordapp.com/emojis/1119740756505145485.gif?v=1&size=48&quality=lossless"))
+    print(db.remove_emote("1119740756505145485"))
 
     print(db.emotes_pages())
 
