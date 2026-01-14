@@ -45,6 +45,9 @@ class Emote:
     def get_url(self) -> str:
         return self._assemble_url()
 
+    def get_extension(self) -> str:
+        return self._extension
+
     async def fetch_emote_img(self) -> Image:
         img_data: Response = await to_thread(get, self._assemble_url())
         return Image.open(io.BytesIO(img_data.content))

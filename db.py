@@ -46,9 +46,8 @@ class DbHandler:
 def main() -> None:
     db: DbHandler = DbHandler(10)
 
-    print(db.remove_emote("1119740756505145485"))
+    print(db.add_emote("https://cdn.discordapp.com/emojis/1119740756505145485.gif?v=1&size=48&quality=lossless"))
 
-    print(db.emotes_pages())
 
 if __name__ == '__main__':
     main()
