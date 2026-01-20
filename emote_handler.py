@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import io
 import os
 from asyncio import to_thread, run, create_task, Task
+from pyperclip import copy as ppcopy
 
 class Emote:
     def __init__(self, url: str) -> None:
@@ -18,11 +19,17 @@ class Emote:
             self._top_level_domain: str = re.search(r'(com/)', url).group()
             self._slug: str = re.search(r'emojis/', url).group()
             self._emote_ID: str = re.search(r'\d{18,19}\.', url).group()
-            self._extension: str = re.search(r'((gif)|(png)|(jpg)|(jpeg)|(jfif))\?', url).group()
+            self._extension: str = re.search(strs.Handler.Internal.SUPPORTED_EXTENSIONS, url).group()
             self._config: str = re.search(r'(v=\d&size=\d{2}&quality=lossless)', url).group()
 
         except AttributeError:
             raise InvalidEmote(strs.Handler.External.INVALID_URL)
+
+    def __str__(self) -> str:
+        return f'Emote {self._emote_ID}'
+
+    def __repr__(self) -> str:
+        return f'{self._emote_ID.replace('.', '')}'
 
 
     def _get_privates(self) -> list[str]:
@@ -44,6 +51,9 @@ class Emote:
 
     def get_url(self) -> str:
         return self._assemble_url()
+
+    def copy_url(self) -> None:
+        ppcopy(self._assemble_url())
 
     def get_extension(self) -> str:
         return self._extension

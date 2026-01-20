@@ -43,6 +43,10 @@ class DbHandler:
     def previous_page(self) -> None:
         self.current_page -= 1
 
+    @property
+    def get_db_obj(self):
+        return self._emote_db
+
 def main() -> None:
     db: DbHandler = DbHandler(10)
 
