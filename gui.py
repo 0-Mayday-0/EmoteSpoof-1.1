@@ -8,8 +8,8 @@ from itertools import batched
 import strings as strs
 from asyncio import create_task, Task, gather, run
 
-class Window(sg.Window):
-    def __init__(self, cols: int, max_per_page: int, **kwargs) -> None:
+class EmoteWindow(sg.Window):
+    def __init__(self, cols: int, max_per_page: int, max_rows: int, **kwargs) -> None:
         super().__init__(**kwargs)
         self.emotes_db: DbHandler = DbHandler(10)
         self._query_obj: Query = Query()
@@ -17,6 +17,7 @@ class Window(sg.Window):
         self.layouts: list[list[sg.Column]] = []
         self.current_page: int = 0
         self.max_per_page: int = max_per_page
+        self.max_rows: int = max_rows
         self.cols: int = cols
         self._temp: list[Emote] = [Emote(i[strs.Handler.Internal.EMOTE_URL]) for i in self.emotes_db.get_db_obj.all()]
         self.emotes_buttons: list[sg.Button] = []
@@ -29,8 +30,8 @@ class Window(sg.Window):
             await emote.save_to_cache()
 
         self.emotes_buttons: list[sg.Button] = [sg.Button(image_filename=f'./{os.getenv(strs.Handler.Internal.IMG_CACHE_NAME)}/{emote.get_id()}{emote.get_extension().replace('?', '')}',
-                                                            enable_events=True,
-                                                            key=emote) for emote in self._temp]
+                                                          enable_events=True, key=emote, expand_x=self.expand,
+                                                          expand_y=self.expand) for emote in self._temp]
 
         self.buttons_pages: list[tuple[sg.Button, ...]] = list(batched(self.emotes_buttons, self.max_per_page))
 
@@ -42,10 +43,8 @@ class Window(sg.Window):
 
             temp_layout = list(batched(temp_layout, self.cols))
 
-            print(temp_layout)
 
             self.layouts.append([sg.Column(temp_layout, key=index)])
-
 
 
 
@@ -58,7 +57,7 @@ class Window(sg.Window):
                                                 sg.Button(button_text=strs.Menu.External.NEXT_PAGE,
                                                 key=strs.Menu.Internal.NX_PAGE_EVENT)]]
 
-        self.layout(rows=[self.layouts] + [pages_buttons])
+        self.layout(rows=[self.layouts] + pages_buttons)
 
         self.finalize()
 
@@ -94,27 +93,30 @@ class Window(sg.Window):
     def get_current_page(self):
         return self.current_page
 
-async def main():
-    window = Window(title='Emotes', cols=4, max_per_page=15, resizable=True)
-    await window.create_emotes_page()
+
+async def mainloop(title: str, cols: int, max_rows: int, max_per_page: int) -> None:
+    emote_window = EmoteWindow(title=title, cols=cols, max_rows=max_rows, max_per_page=max_per_page , resizable=True)
+    await emote_window.create_emotes_page()
 
     while True:
-        event, values = window.read()
+        event, values = emote_window.read()
 
         if event == sg.WIN_CLOSED:
-            window.clear_cache()
+            emote_window.clear_cache()
             break
 
         if event == strs.Menu.Internal.NX_PAGE_EVENT:
-            await window.next_page()
-
+            await emote_window.next_page()
 
         if event == strs.Menu.Internal.PV_PAGE_EVENT:
-            await window.previous_page()
-
+            await emote_window.previous_page()
 
         if type(event) == Emote:
             event.copy_url()
+
+async def main():
+    await mainloop(title="Emotes", cols=2, max_rows=3, max_per_page=10)
+
 
 
 if __name__ == '__main__':
