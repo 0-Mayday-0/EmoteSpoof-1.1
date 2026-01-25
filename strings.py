@@ -32,3 +32,8 @@ class Menu:
     class External:
         NEXT_PAGE: str = "Next page"
         PREVIOUS_PAGE: str = "Previous page"
+
+
+    @dataclass(frozen=True)
+    class Debug:
+        CREATED_SWITCH: str = "Created switch pages buttons"
