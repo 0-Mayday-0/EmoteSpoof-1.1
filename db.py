@@ -5,12 +5,11 @@ import strings as strs
 from emote_handler import Emote, InvalidEmote
 
 class DbHandler:
-    def __init__(self, max_emotes: int):
+    def __init__(self):
         load_dotenv(strs.Handler.Internal.DOTENV_NAME)
         database_path: str = os.getenv(strs.Handler.Internal.EMOTE_DB_NAME)
         self._emote_db: tdb.TinyDB = tdb.TinyDB(database_path)
         self._query_object: tdb.Query = tdb.Query()
-        self.max_emotes_ppage: int = max_emotes
         self.current_page: int = 1
 
     def add_emote(self, url) -> str:
@@ -48,7 +47,7 @@ class DbHandler:
         return self._emote_db
 
 def main() -> None:
-    db: DbHandler = DbHandler(10)
+    db: DbHandler = DbHandler()
 
     print(db.add_emote("https://cdn.discordapp.com/emojis/1119740756505145485.gif?v=1&size=48&quality=lossless"))
 
