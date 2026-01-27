@@ -23,8 +23,8 @@ class EmotesWindow(tk.Tk):
         self._cols: int = cols
         self._buttons_per_page: int = rows * cols
         self._current_page: int = self._db_handle.current_page + 1
-        self._pages_buttons: list[ttk.Button] = [ttk.Button(self, text=strs.Menu.External.PREVIOUS_PAGE, command=self._previous_page),
-                                                 ttk.Button(self, text=strs.Menu.External.NEXT_PAGE, command=self._next_page)]
+        self._current_emotes: list[Emote] = []
+        self._pages_buttons: list[ttk.Button] = []
 
         self._emotes_buttons: set[ttk.Button] = set()
         self._current_images: list[tk.PhotoImage] = []
@@ -53,7 +53,15 @@ class EmotesWindow(tk.Tk):
             ic(self._current_page)
             await self._generate_emote_page()
 
+    def _invoke_previous_page(self) -> None:
+        ascio.run(self._previous_page())
+
+    def _invoke_next_page(self) -> None:
+        ascio.run(self._next_page())
+
     def _place_pages_buttons(self) -> None:
+        self._pages_buttons = [ttk.Button(self, text=strs.Menu.External.PREVIOUS_PAGE, command=self._invoke_previous_page),
+                               ttk.Button(self, text=strs.Menu.External.NEXT_PAGE, command=self._invoke_next_page)]
         [button.grid(row=0, column=index) for index, button in enumerate(self._pages_buttons)]
 
 
@@ -75,24 +83,26 @@ class EmotesWindow(tk.Tk):
                                    f'{eid.get_extension().replace('?', '')}') for eid in emotes]
 
     def _destroy_page(self) -> None:
-        self.destroy()
+        for i in self.slaves():
+            ic(i)
+
 
     async def _generate_emote_page(self) -> None:
         self._place_pages_buttons()
 
-        current_emotes: list[Emote] = [Emote(str(self._db_handle.get_db_obj.get(doc_id=i+1)
+        self._current_emotes: list[Emote] = [Emote(str(self._db_handle.get_db_obj.get(doc_id=i+1)
                                                  [strs.Handler.Internal.EMOTE_URL])) for i in range
                                                  (self._current_page * self._buttons_per_page)]
 
 
-        self._current_images: list[tk.PhotoImage] = await self._cache_emotes(current_emotes)
+        self._current_images: list[tk.PhotoImage] = await self._cache_emotes(self._current_emotes)
 
-        grid_buttons: list[ttk.Button] = [ttk.Button(self, image=v, width=48) for i, v in enumerate(self._current_images)]
+        grid_buttons: list[ttk.Button] = [ttk.Button(self, image=image, width=48, command=emote.copy_url) for image, emote in zip(self._current_images, self._current_emotes)]
 
-        for x, button in enumerate(grid_buttons):
-            button.bind('<Return>', current_emotes[x].copy_url())
-            for y, button1 in enumerate(grid_buttons):
-                button.grid(row=y, column=x)
+        for x, v in enumerate(grid_buttons):
+            for y, v1 in enumerate(grid_buttons):
+                v.grid(row=y, column=x)
+
 
     @staticmethod
     def clear_cache() -> None:
