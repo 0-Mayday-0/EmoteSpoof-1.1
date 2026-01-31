@@ -82,7 +82,32 @@ class EmoteWindow(sg.Window):
         except IndexError:
             print(strs.Menu.External.NO_MORE_PAGES)
 
-def main():
+class MainMenu(sg.Window):
+    def __init__(self, title: str) -> None:
+        super().__init__(title)
+        self._buttons: list[sg.Button] = [sg.Button(button_text=strs.Menu.External.ADD_EMOTE, key=strs.Menu.Internal.ADD_EVENT),
+                                          sg.Button(button_text=strs.Menu.External.REMOVE_EMOTE, key=strs.Menu.Internal.RM_EVENT)]
+
+        self.layout(rows=[self._buttons])
+
+class AddEmote(sg.Window):
+    def __init__(self, title: str) -> None:
+        super().__init__(title)
+        self._db: DbHandler = DbHandler()
+        self._buttons: list[sg.Button] = [sg.Button(button_text=strs.Menu.External.ADD_EMOTE, key=strs.Menu.Internal.ADD_EVENT)]
+        self._url_input: list[sg.Input] = [sg.Input(key=strs.Menu.Internal.URL_KEY)]
+
+        self.layout(rows=[self._buttons] + [self._url_input])
+
+    def read_url(self):
+        try:
+            e: Emote = Emote(self[strs.Menu.Internal.URL_KEY].get())
+
+        except InvalidEmote:
+            print(strs.Handler.External.INVALID_URL)
+
+
+def run_emotes() -> None:
     w: EmoteWindow = EmoteWindow("Emote Window", 4, 2)
 
     w.create_buttons()
@@ -103,6 +128,44 @@ def main():
             event.copy_url()
 
     w.close()
+
+def run_add() -> None:
+    add_window: AddEmote = AddEmote("Add Emote")
+
+    while True:
+        event, values = add_window.read()
+
+        if event == sg.WIN_CLOSED:
+            add_window.close()
+            run_main()
+            break
+
+        if event == strs.Menu.Internal.ADD_EVENT:
+            add_window.read_url()
+
+def run_remove() -> None:
+    raise NotImplementedError
+
+def run_main() -> None:
+    mm: MainMenu = MainMenu("Main Menu")
+
+    while True:
+        event, values = mm.read()
+
+        if event == sg.WIN_CLOSED:
+            break
+
+        if event == strs.Menu.Internal.ADD_EVENT:
+            mm.close()
+            run_add()
+
+        if event == strs.Menu.Internal.RM_EVENT:
+            mm.close()
+            run_remove()
+    mm.close()
+
+def main():
+    run_main()
 
 if __name__ == "__main__":
     main()

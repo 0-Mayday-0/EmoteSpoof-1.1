@@ -27,9 +27,14 @@ class Menu:
     class Internal:
         NX_PAGE_EVENT: str = 'nx'
         PV_PAGE_EVENT: str = 'pv'
+        ADD_EVENT: str = 'add'
+        RM_EVENT: str = "rm"
+        URL_KEY: str = 'url'
 
     @dataclass(frozen=True)
     class External:
         NEXT_PAGE: str = "Next page"
         PREVIOUS_PAGE: str = "Previous page"
         NO_MORE_PAGES: str = "No more pages"
+        ADD_EMOTE: str = "Add emote"
+        REMOVE_EMOTE: str = "Remove emote"
