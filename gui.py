@@ -6,116 +6,103 @@ import os
 from emote_handler import Emote
 from itertools import batched
 import strings as strs
-from asyncio import create_task, Task, gather, run
-
-class Window(sg.Window):
-    def __init__(self, cols: int, max_per_page: int, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.emotes_db: DbHandler = DbHandler(10)
-        self._query_obj: Query = Query()
-        self.expand: bool = True
-        self.layouts: list[list[sg.Column]] = []
-        self.current_page: int = 0
-        self.max_per_page: int = max_per_page
-        self.cols: int = cols
-        self._temp: list[Emote] = [Emote(i[strs.Handler.Internal.EMOTE_URL]) for i in self.emotes_db.get_db_obj.all()]
-        self.emotes_buttons: list[sg.Button] = []
-        self.buttons_pages: list[tuple[sg.Button, ...]] = []
+from requests import get as rqget
 
 
-    async def create_emotes_page(self):
+class EmoteWindow(sg.Window):
+    def __init__(self, title: str, rows: int, cols: int, expand: bool = True) -> None:
+        super().__init__(title)
 
-        for emote in self._temp:
-            await emote.save_to_cache()
+        self._rows = rows
+        self._cols = cols
+        self._expand = expand
+        self._layouts: list[list[sg.Column]] = []
+        self.db: DbHandler = DbHandler()
+        self._max_emotes: int = rows * cols
+        self._current_page: int = 0
+        self._pager: list[sg.Button] = [sg.Button(button_text=strs.Menu.External.PREVIOUS_PAGE,
+                                                  key=strs.Menu.Internal.PV_PAGE_EVENT),
+                                        sg.Button(button_text=strs.Menu.External.NEXT_PAGE,
+                                                  key=strs.Menu.Internal.NX_PAGE_EVENT)]
+        self._all_emotes: list[Emote] = [Emote(i[strs.Handler.Internal.EMOTE_URL]) for i in self.db.get_db_obj.all()]
 
-        self.emotes_buttons: list[sg.Button] = [sg.Button(image_filename=f'./{os.getenv(strs.Handler.Internal.IMG_CACHE_NAME)}/{emote.get_id()}{emote.get_extension().replace('?', '')}',
-                                                            enable_events=True,
-                                                            key=emote) for emote in self._temp]
+        self._all_buttons: list[sg.Button] = [sg.Button(image_data=rqget(emote.get_url()).content,
+                                                        key=emote,
+                                                        expand_y=self._expand,
+                                                        expand_x=self._expand) for emote in self._all_emotes]
 
-        self.buttons_pages: list[tuple[sg.Button, ...]] = list(batched(self.emotes_buttons, self.max_per_page))
+        self._button_pages: list[tuple[sg.Button, ...]] = list(batched(self._all_buttons, self._max_emotes))
 
-        for index, page in enumerate(self.buttons_pages):
-            temp_layout = []
-
-            for button in page:
-                temp_layout.append(button)
-
-            temp_layout = list(batched(temp_layout, self.cols))
-
-            print(temp_layout)
-
-            self.layouts.append([sg.Column(temp_layout, key=index)])
+        del self._all_emotes, self._all_buttons
 
 
+    def create_buttons(self):
+        for i, v in enumerate(self._button_pages):
+            curr_layout = []
+            for button in v:
+                curr_layout.append(button)
 
+            curr_layout = list(batched(curr_layout, self._cols))
 
-        '''current_layout: list[list[sg.Button]] = [[sg.Button(image_filename=f'./{os.getenv(strs.Handler.Internal.IMG_CACHE_NAME)}/{eid.get_id()}{eid.get_extension().replace('?', '')}',
-                                                            enable_events=True,
-                                                            key=eid) for eid in self.emotes_pages[self.current_page]]]'''
+            self._layouts.append(sg.Column(curr_layout, key=i, expand_y=self._expand, expand_x=self._expand))
 
-        pages_buttons: list[list[sg.Button]] = [[sg.Button(button_text=strs.Menu.External.PREVIOUS_PAGE,
-                                                           key=strs.Menu.Internal.PV_PAGE_EVENT),
-                                                sg.Button(button_text=strs.Menu.External.NEXT_PAGE,
-                                                key=strs.Menu.Internal.NX_PAGE_EVENT)]]
-
-        self.layout(rows=[self.layouts] + [pages_buttons])
+        self.layout(rows=[self._pager] + [self._layouts])
 
         self.finalize()
 
-        for i, v in enumerate(self.buttons_pages):
+        for i, v in enumerate(self._button_pages):
             if i == 0:
                 continue
+            self[self._current_page+i].update(visible=False)
+
+    def next_page(self):
+
+        try:
+            if self._current_page + 1 == len(list(self._button_pages)):
+                raise IndexError
             else:
-                self[self.current_page+i].update(visible=False)
+                self[self._current_page].update(visible=False)
+                self._current_page += 1
+
+            self[self._current_page].update(visible=True)
+        except IndexError:
+            print(strs.Menu.External.NO_MORE_PAGES)
 
 
-    @staticmethod
-    def clear_cache():
-        os.system('del /f /s /q img_cache')
 
+    def previous_page(self):
+        try:
+            if self._current_page - 1 < 0:
+                raise IndexError
+            else:
+                self[self._current_page].update(visible=False)
+                self._current_page -= 1
 
-    async def next_page(self):
-        if self.current_page + 1 == len(self.buttons_pages):
-            pass
-        else:
-            self.current_page += 1
-            self[self.current_page-1].update(visible=False)
-            self[self.current_page].update(visible=True)
+            self[self._current_page].update(visible=True)
+        except IndexError:
+            print(strs.Menu.External.NO_MORE_PAGES)
 
-    async def previous_page(self):
-        if self.current_page == 0:
-            pass
-        else:
-            self.current_page -= 1
-            self[self.current_page+1].update(visible=False)
-            self[self.current_page].update(visible=True)
+def main():
+    w: EmoteWindow = EmoteWindow("Emote Window", 4, 2)
 
-    @property
-    def get_current_page(self):
-        return self.current_page
-
-async def main():
-    window = Window(title='Emotes', cols=4, max_per_page=15, resizable=True)
-    await window.create_emotes_page()
+    w.create_buttons()
 
     while True:
-        event, values = window.read()
+        event, values = w.read()
 
         if event == sg.WIN_CLOSED:
-            window.clear_cache()
             break
 
         if event == strs.Menu.Internal.NX_PAGE_EVENT:
-            await window.next_page()
-
+            w.next_page()
 
         if event == strs.Menu.Internal.PV_PAGE_EVENT:
-            await window.previous_page()
-
+            w.previous_page()
 
         if type(event) == Emote:
             event.copy_url()
 
+    w.close()
 
-if __name__ == '__main__':
-    run(main())
+if __name__ == "__main__":
+    main()

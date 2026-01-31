@@ -32,3 +32,4 @@ class Menu:
     class External:
         NEXT_PAGE: str = "Next page"
         PREVIOUS_PAGE: str = "Previous page"
+        NO_MORE_PAGES: str = "No more pages"
