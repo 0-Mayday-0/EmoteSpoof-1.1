@@ -7,7 +7,10 @@ from emote_handler import Emote
 from itertools import batched
 import strings as strs
 from requests import get as rqget
+import tkinter.messagebox as messagebox
 
+
+global_rows, global_cols = 5, 5
 
 class EmoteWindow(sg.Window):
     def __init__(self, title: str, rows: int, cols: int, expand: bool = True) -> None:
@@ -86,7 +89,8 @@ class MainMenu(sg.Window):
     def __init__(self, title: str) -> None:
         super().__init__(title)
         self._buttons: list[sg.Button] = [sg.Button(button_text=strs.Menu.External.ADD_EMOTE, key=strs.Menu.Internal.ADD_EVENT),
-                                          sg.Button(button_text=strs.Menu.External.REMOVE_EMOTE, key=strs.Menu.Internal.RM_EVENT)]
+                                          sg.Button(button_text=strs.Menu.External.REMOVE_EMOTE, key=strs.Menu.Internal.RM_EVENT),
+                                          sg.Button(button_text=strs.Menu.External.EMOTES, key=strs.Menu.Internal.EMOTES_EVENT)]
 
         self.layout(rows=[self._buttons])
 
@@ -102,13 +106,16 @@ class AddEmote(sg.Window):
     def read_url(self):
         try:
             e: Emote = Emote(self[strs.Menu.Internal.URL_KEY].get())
+            self[strs.Menu.Internal.URL_KEY].update('')
+            self._db.add_emote(e.get_url())
 
         except InvalidEmote:
-            print(strs.Handler.External.INVALID_URL)
+            messagebox.showerror(title=strs.Menu.External.INVALID_URL ,message=strs.Handler.External.INVALID_URL)
+
 
 
 def run_emotes() -> None:
-    w: EmoteWindow = EmoteWindow("Emote Window", 4, 2)
+    w: EmoteWindow = EmoteWindow("Emote Window", global_rows, global_cols)
 
     w.create_buttons()
 
@@ -116,6 +123,8 @@ def run_emotes() -> None:
         event, values = w.read()
 
         if event == sg.WIN_CLOSED:
+            w.close()
+            run_main()
             break
 
         if event == strs.Menu.Internal.NX_PAGE_EVENT:
@@ -127,7 +136,6 @@ def run_emotes() -> None:
         if type(event) == Emote:
             event.copy_url()
 
-    w.close()
 
 def run_add() -> None:
     add_window: AddEmote = AddEmote("Add Emote")
@@ -144,7 +152,27 @@ def run_add() -> None:
             add_window.read_url()
 
 def run_remove() -> None:
-    raise NotImplementedError
+    remove_window: EmoteWindow = EmoteWindow("Remove Emote", global_rows, global_cols)
+
+    remove_window.create_buttons()
+
+    while True:
+        event, values = remove_window.read()
+
+        if event == sg.WIN_CLOSED:
+            remove_window.close()
+            run_main()
+            break
+
+        if event == strs.Menu.Internal.NX_PAGE_EVENT:
+            remove_window.next_page()
+
+        if event == strs.Menu.Internal.PV_PAGE_EVENT:
+            remove_window.previous_page()
+
+        if type(event) == Emote:
+            success: str = remove_window.db.remove_emote(event.get_id().replace('.', ''))
+            messagebox.showinfo(title=strs.Menu.External.REMOVED, message=success)
 
 def run_main() -> None:
     mm: MainMenu = MainMenu("Main Menu")
@@ -162,6 +190,10 @@ def run_main() -> None:
         if event == strs.Menu.Internal.RM_EVENT:
             mm.close()
             run_remove()
+
+        if event == strs.Menu.Internal.EMOTES_EVENT:
+            mm.close()
+            run_emotes()
     mm.close()
 
 def main():

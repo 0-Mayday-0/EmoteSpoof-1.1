@@ -30,6 +30,7 @@ class Menu:
         ADD_EVENT: str = 'add'
         RM_EVENT: str = "rm"
         URL_KEY: str = 'url'
+        EMOTES_EVENT: str = 'emt'
 
     @dataclass(frozen=True)
     class External:
@@ -38,3 +39,7 @@ class Menu:
         NO_MORE_PAGES: str = "No more pages"
         ADD_EMOTE: str = "Add emote"
         REMOVE_EMOTE: str = "Remove emote"
+        EMOTES: str = "Show emotes"
+        INVALID_URL: str = "Error adding emote"
+        REMOVED: str = "Removed emote"
+        REMOVED_EMOTE: str = "Emote {eid} was removed successfully."
